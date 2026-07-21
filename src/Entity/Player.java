@@ -15,52 +15,69 @@ public class Player extends Entity {
     GamePanel gp;
     KeyHandler keyH;
 
+    private File resolveFile(String relativePath) {
+        File currentDir = new File(System.getProperty("user.dir"));
+        while (currentDir != null) {
+            File candidate = new File(currentDir, relativePath);
+            if (candidate.exists() && candidate.isFile()) {
+                return candidate;
+            }
+            currentDir = currentDir.getParentFile();
+        }
+        return new File(relativePath);
+    }
+
+    public final int screenX;
+    public final int screenY;
+    public Rectangle solidArea = new Rectangle(8, 16, 32, 32); // Adjust the solid area to match the player's sprite size
+
     public Player(GamePanel gp, KeyHandler keyH) {
         this.gp = gp;
         this.keyH = keyH;
+
+        screenX = gp.screenWidth / 2 - (gp.tileSize / 2);
+        screenY = gp.screenHeight / 2 - (gp.tileSize / 2);
+
         setDefaultValues();
         getPlayerImage();
     }
     public void setDefaultValues() {
-        x = 100;
-        y = 100;
+        worldX = gp.tileSize * 23;
+        worldY = gp.tileSize * 21;
         speed = 4;
         direction = "down";
     }
 
     public void getPlayerImage() {
         try {
-            up1 = ImageIO.read(new File("res/player/boy_up_1.png"));
-            up2 = ImageIO.read(new File("res/player/boy_up_2.png"));
-            down1 = ImageIO.read(new File("res/player/boy_down_1.png"));
-            down2 = ImageIO.read(new File("res/player/boy_down_2.png"));
-            left1 = ImageIO.read(new File("res/player/boy_left_1.png"));
-            left2 = ImageIO.read(new File("res/player/boy_left_2.png"));
-            right1 = ImageIO.read(new File("res/player/boy_right_1.png"));
-            right2 = ImageIO.read(new File("res/player/boy_right_2.png"));
+            up1 = ImageIO.read(resolveFile("res/player/boy_up_1.png"));
+            up2 = ImageIO.read(resolveFile("res/player/boy_up_2.png"));
+            down1 = ImageIO.read(resolveFile("res/player/boy_down_1.png"));
+            down2 = ImageIO.read(resolveFile("res/player/boy_down_2.png"));
+            left1 = ImageIO.read(resolveFile("res/player/boy_left_1.png"));
+            left2 = ImageIO.read(resolveFile("res/player/boy_left_2.png"));
+            right1 = ImageIO.read(resolveFile("res/player/boy_right_1.png"));
+            right2 = ImageIO.read(resolveFile("res/player/boy_right_2.png"));
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
     public void update() {
-        if (keyH.upPressed == true) {
-            y -= speed;
+        if (keyH.upPressed) {
             direction = "up";
-        }
-        if (keyH.downPressed) {
-            y += speed;
-            direction = "down"; 
-        }
-        if (keyH.leftPressed) {
-            x -= speed;
+            moveIfPossible(0, -speed);
+        }if (keyH.downPressed) {
+            direction = "down";
+            moveIfPossible(0, speed);
+        }if (keyH.leftPressed) {
             direction = "left";
-        }
-        if (keyH.rightPressed) {
-            x += speed;
+            moveIfPossible(-speed, 0);
+        }if (keyH.rightPressed) {
             direction = "right";
+            moveIfPossible(speed, 0);
         }
-        
+
         if (keyH.upPressed || keyH.downPressed || keyH.leftPressed || keyH.rightPressed) {
             spriteCounter++;
             if (spriteCounter > 12) {
@@ -71,6 +88,16 @@ public class Player extends Entity {
                 }
                 spriteCounter = 0;
             }
+        }
+    }
+
+    private void moveIfPossible(int deltaX, int deltaY) {
+        collisionOn = false;
+        gp.cChecker.checkTile(this);
+
+        if (!collisionOn) {
+            worldX += deltaX;
+            worldY += deltaY;
         }
     }
 
@@ -109,7 +136,7 @@ public class Player extends Entity {
                 }
                 break;
         }
-        g2.drawImage(image, x, y, gp.tileSize, gp.tileSize, null);
+        g2.drawImage(image, screenX, screenY, gp.tileSize, gp.tileSize, null);
  
     }
 
