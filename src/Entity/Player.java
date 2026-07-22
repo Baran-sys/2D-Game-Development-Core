@@ -15,21 +15,13 @@ public class Player extends Entity {
     GamePanel gp;
     KeyHandler keyH;
 
-    private File resolveFile(String relativePath) {
-        File currentDir = new File(System.getProperty("user.dir"));
-        while (currentDir != null) {
-            File candidate = new File(currentDir, relativePath);
-            if (candidate.exists() && candidate.isFile()) {
-                return candidate;
-            }
-            currentDir = currentDir.getParentFile();
-        }
-        return new File(relativePath);
-    }
-
     public final int screenX;
     public final int screenY;
-    public Rectangle solidArea = new Rectangle(8, 16, 32, 32); // Adjust the solid area to match the player's sprite size
+    public Rectangle solidArea = new Rectangle(10, 14, 28, 28); // Adjust the solid area to match the player's sprite size
+    int solidAreaDefaultX = solidArea.x;
+    int solidAreaDefaultY = solidArea.y;
+    int hasKey = 0;
+
 
     public Player(GamePanel gp, KeyHandler keyH) {
         this.gp = gp;
@@ -50,14 +42,14 @@ public class Player extends Entity {
 
     public void getPlayerImage() {
         try {
-            up1 = ImageIO.read(resolveFile("res/player/boy_up_1.png"));
-            up2 = ImageIO.read(resolveFile("res/player/boy_up_2.png"));
-            down1 = ImageIO.read(resolveFile("res/player/boy_down_1.png"));
-            down2 = ImageIO.read(resolveFile("res/player/boy_down_2.png"));
-            left1 = ImageIO.read(resolveFile("res/player/boy_left_1.png"));
-            left2 = ImageIO.read(resolveFile("res/player/boy_left_2.png"));
-            right1 = ImageIO.read(resolveFile("res/player/boy_right_1.png"));
-            right2 = ImageIO.read(resolveFile("res/player/boy_right_2.png"));
+            up1 = ImageIO.read(new File("res/player/boy_up_1.png"));
+            up2 = ImageIO.read(new File("res/player/boy_up_2.png"));
+            down1 = ImageIO.read(new File("res/player/boy_down_1.png"));
+            down2 = ImageIO.read(new File("res/player/boy_down_2.png"));
+            left1 = ImageIO.read(new File("res/player/boy_left_1.png"));
+            left2 = ImageIO.read(new File("res/player/boy_left_2.png"));
+            right1 = ImageIO.read(new File("res/player/boy_right_1.png"));
+            right2 = ImageIO.read(new File("res/player/boy_right_2.png"));
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -95,9 +87,40 @@ public class Player extends Entity {
         collisionOn = false;
         gp.cChecker.checkTile(this);
 
+        int objectIndex = gp.cChecker.checkObject(this, true);
+        pickUpObject(objectIndex);
+
         if (!collisionOn) {
             worldX += deltaX;
             worldY += deltaY;
+        }
+    }
+
+
+    public void pickUpObject(int index) {
+        if (index != -1) {
+            String objectName = gp.obj[index].name;
+
+            switch (objectName) {
+                case "Key":
+                    hasKey++;
+                    gp.obj[index] = null;
+                    System.out.println("You got a key! Total keys: " + hasKey);
+                    break;
+                case "Door":
+                    if (hasKey > 0) {
+                        hasKey--;
+                        gp.obj[index] = null;
+                        System.out.println("You opened the door! Remaining keys: " + hasKey);
+                    } else {
+                        System.out.println("You need a key to open this door.");
+                    }
+                    break;
+                case "Chest":
+                    System.out.println("You found a chest!");
+                    // Add logic for opening the chest or collecting items
+                    break;
+            }
         }
     }
 

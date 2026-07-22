@@ -2,7 +2,6 @@ package tile;
 
 import javax.imageio.ImageIO;
 import java.awt.*;
-import java.awt.image.BufferedImage;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
@@ -12,31 +11,6 @@ public class TileManager {
     GamePanel gp;
     public Tile[] tile;
     public int mapTileNum[][];
-
-    private File resolveFile(String relativePath) {
-        File currentDir = new File(System.getProperty("user.dir"));
-        while (currentDir != null) {
-            File candidate = new File(currentDir, relativePath);
-            if (candidate.exists() && candidate.isFile()) {
-                return candidate;
-            }
-            currentDir = currentDir.getParentFile();
-        }
-        return new File(relativePath);
-    }
-    
-    private BufferedImage loadImage(String... relativePaths) {
-        for (String relativePath : relativePaths) {
-            try {
-                File file = resolveFile(relativePath);
-                if (file.exists() && file.isFile()) {
-                    return ImageIO.read(file);
-                }
-            } catch (Exception ignored) {
-            }
-        }
-        return null;
-    }
 
     public TileManager(GamePanel gp) {
         this.gp = gp;
@@ -49,25 +23,25 @@ public class TileManager {
     public void getTileImage() {
         try {
             tile[0] = new Tile();
-            tile[0].image = loadImage("res/tiles/grass.png");
+            tile[0].image = ImageIO.read(new File("res/tiles/grass.png"));
 
             tile[1] = new Tile();
-            tile[1].image = loadImage("res/tiles/wall.png");
+            tile[1].image = ImageIO.read(new File("res/tiles/wall.png"));
             tile[1].collision = true;
 
             tile[2] = new Tile();
-            tile[2].image = loadImage("res/tiles/water.png");
+            tile[2].image = ImageIO.read(new File("res/tiles/water.png"));
             tile[2].collision = true;
 
             tile[3] = new Tile();
-            tile[3].image = loadImage("res/tiles/earth.png");
+            tile[3].image = ImageIO.read(new File("res/tiles/earth.png"));
 
             tile[4] = new Tile();
-            tile[4].image = loadImage("res/tiles/tree.png");
+            tile[4].image = ImageIO.read(new File("res/tiles/tree.png"));
             tile[4].collision = true;
 
             tile[5] = new Tile();
-            tile[5].image = loadImage("res/tiles/sand.png");
+            tile[5].image = ImageIO.read(new File("res/tiles/sand.png"));
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -76,7 +50,7 @@ public class TileManager {
 
     public void loadMap() {
         try {
-            File mapFile = resolveFile("res/maps/map2.txt");
+            File mapFile = new File("res/maps/map2.txt");
             BufferedReader br = new BufferedReader(new FileReader(mapFile));
 
             int row = 0;
