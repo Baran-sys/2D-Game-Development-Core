@@ -9,6 +9,8 @@ import javax.imageio.ImageIO;
 
 import Main.GamePanel;
 import Main.KeyHandler;
+import Main.UtilityTool;
+import object.OBJ_Chest;
 
 public class Player extends Entity {
 
@@ -20,7 +22,8 @@ public class Player extends Entity {
     public Rectangle solidArea = new Rectangle(10, 14, 28, 28); // Adjust the solid area to match the player's sprite size
     int solidAreaDefaultX = solidArea.x;
     int solidAreaDefaultY = solidArea.y;
-    int hasKey = 0;
+    public int hasKey = 0;
+    private int lastInteractedObjectIndex = -1;
 
 
     public Player(GamePanel gp, KeyHandler keyH) {
@@ -41,18 +44,27 @@ public class Player extends Entity {
     }
 
     public void getPlayerImage() {
+            up1 = setup("boy_up_1");
+            up2 = setup("boy_up_2");
+            down1 = setup("boy_down_1");
+            down2 = setup("boy_down_2");
+            left1 = setup("boy_left_1");
+            left2 = setup("boy_left_2");
+            right1 = setup("boy_right_1");
+            right2 = setup("boy_right_2");
+    }
+
+    public BufferedImage setup(String imagePath) {
+        UtilityTool uTool = new UtilityTool();
+        BufferedImage image = null;
         try {
-            up1 = ImageIO.read(new File("res/player/boy_up_1.png"));
-            up2 = ImageIO.read(new File("res/player/boy_up_2.png"));
-            down1 = ImageIO.read(new File("res/player/boy_down_1.png"));
-            down2 = ImageIO.read(new File("res/player/boy_down_2.png"));
-            left1 = ImageIO.read(new File("res/player/boy_left_1.png"));
-            left2 = ImageIO.read(new File("res/player/boy_left_2.png"));
-            right1 = ImageIO.read(new File("res/player/boy_right_1.png"));
-            right2 = ImageIO.read(new File("res/player/boy_right_2.png"));
+            image = ImageIO.read(new File("res/player/" + imagePath + ".png"));
+            image = uTool.scaleImage(image, gp.tileSize, gp.tileSize);
+
         } catch (IOException e) {
             e.printStackTrace();
         }
+        return image;
     }
 
     public void update() {
@@ -88,7 +100,15 @@ public class Player extends Entity {
         gp.cChecker.checkTile(this);
 
         int objectIndex = gp.cChecker.checkObject(this, true);
-        pickUpObject(objectIndex);
+
+        if (objectIndex != -1) {
+            if (objectIndex != lastInteractedObjectIndex) {
+                pickUpObject(objectIndex);
+                lastInteractedObjectIndex = objectIndex;
+            }
+        } else {
+            lastInteractedObjectIndex = -1;
+        }
 
         if (!collisionOn) {
             worldX += deltaX;
@@ -103,31 +123,43 @@ public class Player extends Entity {
 
             switch (objectName) {
                 case "Key":
-                    hasKey++;
+                    gp.playSE(1); // Play key pickup sound effect
+                    hasKey++; 
                     gp.obj[index] = null;
-                    System.out.println("You got a key! Total keys: " + hasKey);
+                    gp.ui.showMessage("You got a key! Total keys: " + hasKey);
                     break;
                 case "Door":
                     if (hasKey > 0) {
+                        gp.playSE(3); // Play door opening sound effect
                         hasKey--;
                         gp.obj[index] = null;
-                        System.out.println("You opened the door! Remaining keys: " + hasKey);
+                        gp.ui.showMessage("You opened the door! Remaining keys: " + hasKey);
                     } else {
-                        System.out.println("You need a key to open this door.");
+                        gp.ui.showMessage("You need a key to open this door.");
                     }
                     break;
                 case "Chest":
-                    System.out.println("You found a chest!");
-                    // Add logic for opening the chest or collecting items
+                    if(gp.obj[index] instanceof OBJ_Chest) {
+                        OBJ_Chest chest = (OBJ_Chest) gp.obj[index];
+                        if (!chest.isOpen()) {
+                            chest.setOpen(true); // Mark the chest as open
+                            gp.playSE(2); // Play chest opening sound effect
+                            gp.ui.showMessage("You found a chest!");
+                        } else {
+                            gp.ui.showMessage("The chest is already open."); 
+                        }
+                    }
                     break;
+                case "Boots":
+                    gp.playSE(4); // Play boots pickup sound effect
+                    gp.ui.showMessage("You got boots! Your speed has increased.");
+                    gp.obj[index] = null;
+                    speed += 2; // Increase speed by 2 when boots are picked up
             }
         }
     }
 
     public void draw(Graphics2D g2) {
-       // g2.setColor(Color.white);
-       // g2.fillRect(x, y, gp.tileSize, gp.tileSize);
-
         BufferedImage image = null;
         switch (direction) {
             case "up":
@@ -159,7 +191,7 @@ public class Player extends Entity {
                 }
                 break;
         }
-        g2.drawImage(image, screenX, screenY, gp.tileSize, gp.tileSize, null);
+        g2.drawImage(image, screenX, screenY, null);
  
     }
 
